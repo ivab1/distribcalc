@@ -3,7 +3,6 @@ package agent
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -91,7 +90,6 @@ func StartCountingAndGetResult(limits TimeLimitStruct, db *sql.DB) {
 	answer := make(chan int)
 	flag, toCount, expId, mainExpId, expVar, lastCheck := GetExpression()
 	if flag {
-		fmt.Println(toCount)
 		go Counter(toCount, limits, answer)
 		expressionAnswer := <-answer
 		close(answer)
@@ -176,14 +174,11 @@ func GetExpression() (bool, []string, int, int, string, bool) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(receivedExpression)
 		db := orchestrator.StartDB()
 		defer db.Close()
 		row := db.QueryRow("select * from simpleexpressions where id = $1", receivedExpression.ID)
 		expression := ExpressionForCount{}
 		row.Scan(&expression.ID, &expression.MainID, &expression.Variable, &expression.N1, &expression.N2, &expression.Operation, &expression.Answer, &expression.Processing, &expression.Last)
-		fmt.Println(expression.ID)
-
 		return true, []string{expression.N1, expression.Operation, expression.N2}, expression.ID, expression.MainID, expression.Variable, expression.Last
 	}
 	return false, nil, 0, 0, "", false

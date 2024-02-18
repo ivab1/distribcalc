@@ -2,9 +2,6 @@ package front
 
 import (
 	"bytes"
-	"fmt"
-
-	// "fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -147,7 +144,7 @@ func ExpressionsPage(w http.ResponseWriter, r *http.Request) {
 func StatePage(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("../front/templates/state.html", "../front/templates/layout.html")
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 	serverData := GetSereverInformationFromDB()
 	slices.Reverse(serverData)

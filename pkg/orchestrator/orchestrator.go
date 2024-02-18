@@ -127,7 +127,6 @@ func Orchestrator(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Println(expressionData)
 		}
 	}
 	if r.Method == "GET" {
@@ -144,7 +143,6 @@ func Orchestrator(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Println(expr)
 			data, err := json.Marshal(expr)
 			if err != nil {
 				log.Fatal(err)
