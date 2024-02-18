@@ -1,0 +1,29 @@
+{{ define "expressions" }}
+
+{{ template "layout" }}
+    <div class="main">
+        <h1>Недавние выражения</h1>
+        <h3>Список недавних вычислений:</h3>
+        {{ range . }}
+            <ul>
+            <li>id: {{ .Id }}</li>
+            {{ if eq .State 201 }}
+            <li>{{ .Expression }} = {{ .Answer }}</li>
+            {{ else }}
+            {{ if eq .State 400 }}
+            <li>Выражение невалидно</li>
+            {{ else }}
+            {{ if eq .State 500 }}
+            <li>Ошибка</li>
+            {{ else }}
+            <li>{{ .Expression }} = ?</li>
+            {{ end }}
+            {{ end }}
+            {{ end }}
+            <li>status: {{ .State }}</li>
+            </ul>
+        {{ end }}
+    </div>
+</body>
+</html>
+{{ end }}

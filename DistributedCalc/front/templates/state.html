@@ -1,0 +1,23 @@
+{{ define "state" }}
+
+{{ template "layout" }}
+    <div class="main">
+        <h1>Текущее состояние серверов</h1>
+        {{ range . }}
+            <ul>
+                <li>server id: {{ .ServerId }}</li>
+                {{ if eq .State 1 }}
+                <li>state: in work</li>
+                {{ else }}
+                {{ if eq .State 2 }}
+                <li>state: ended work</li>
+                {{ else }}
+                <li>connection lost</li>
+                {{ end }}
+                {{ end }}
+            </ul>
+        {{ end }}
+    </div>
+</body>
+</html>
+{{ end }}
