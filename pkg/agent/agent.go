@@ -52,6 +52,13 @@ func Agent() {
 			log.Fatal(err)
 		}
 		StartCountingAndGetResult(limits, db)
+
+		row = db.QueryRow("select * from servers where serverid = 1")
+		server := Server{}
+		row.Scan(&server.ID, &server.NextPing, &server.ServerState)
+		if t, _ :=  time.Parse("2006-01-02 15:04:05", server.NextPing); time.Until(t) <= time.Duration(limits.LifeTime / 4) * time.Second {
+			db.Exec("update servers set nextping = $1 where id = 1", time.Now().Add(time.Duration(limits.LifeTime)*time.Second).Format("2006-01-02 15:04:05"))
+		}
 	}
 }
 
@@ -82,7 +89,6 @@ func SendPing(db *sql.DB) {
 			log.Fatal(err)
 		}
 		time.Sleep(time.Duration(limits.LifeTime) * time.Second)
-		db.Exec("update servers set nextping = $1 where id = $2", time.Now().Add(time.Duration(limits.LifeTime)*time.Second).Format("2006-01-02 15:04:05"), id)
 	}
 }
 

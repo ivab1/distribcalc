@@ -17,11 +17,6 @@ import (
 type ExpressionStruct struct {
 	Expression string `json:"expression"`
 	ID         int    `json:"id"`
-	TimeAdd    int
-	TimeSub    int
-	TimeMult   int
-	TimeDiv    int
-	LifeTime   int
 }
 
 type SimpleExpressions struct {
@@ -96,7 +91,7 @@ func Orchestrator(w http.ResponseWriter, r *http.Request) {
 
 		newExpression := ExpressionStruct{Expression: string(data)}
 		statuscode := 200
-		if !strings.ContainsAny(newExpression.Expression, "+-*/") || strings.Contains(newExpression.Expression, "**") || strings.ContainsAny(newExpression.Expression, "!@#$%^&()<>|`~\"'") {
+		if !strings.ContainsAny(newExpression.Expression, "+-*/") || strings.Contains(newExpression.Expression, "**") || strings.ContainsAny(newExpression.Expression, ".,!@#$%^&()<>|`~\"'") {
 			statuscode = 400
 			db := StartDB()
 			defer db.Close()
@@ -105,12 +100,6 @@ func Orchestrator(w http.ResponseWriter, r *http.Request) {
 			db := StartDB()
 			defer db.Close()
 			db.QueryRow("insert into expressions (expression, state) values ($1, $2) returning id", newExpression.Expression, statuscode).Scan(&newExpression.ID)
-			row := db.QueryRow("select * from timelimits where id = 1")
-			var id int
-			err = row.Scan(&id, &newExpression.TimeAdd, &newExpression.TimeSub, &newExpression.TimeMult, &newExpression.TimeDiv, &newExpression.LifeTime)
-			if err != nil {
-				log.Fatal(err)
-			}
 
 			tokens, err := shuntingYard.Scan(newExpression.Expression)
 			if err != nil {
