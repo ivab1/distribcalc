@@ -56,7 +56,7 @@ func Agent() {
 		row = db.QueryRow("select * from servers where serverid = 1")
 		server := Server{}
 		row.Scan(&server.ID, &server.NextPing, &server.ServerState)
-		if t, _ :=  time.Parse("2006-01-02 15:04:05", server.NextPing); time.Until(t) <= time.Duration(limits.LifeTime / 4) * time.Second {
+		if t, _ := time.Parse("2006-01-02 15:04:05", server.NextPing); time.Until(t) <= time.Duration(limits.LifeTime/4)*time.Second {
 			db.Exec("update servers set nextping = $1 where id = 1", time.Now().Add(time.Duration(limits.LifeTime)*time.Second).Format("2006-01-02 15:04:05"))
 		}
 	}
@@ -142,7 +142,7 @@ func Counter(expression []string, operationTime TimeLimitStruct, answerCh chan i
 	} else if op == "-" {
 		go func() {
 			time.Sleep(time.Duration(operationTime.TimeSub) * time.Second)
-			answerCh <- n1 + n2
+			answerCh <- n1 - n2
 		}()
 	} else if op == "*" {
 		go func() {
