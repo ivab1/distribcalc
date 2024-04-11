@@ -27,7 +27,6 @@ type Server struct {
 // Подключение к базе данных
 func StartDB() *sql.DB {
 	connStr := os.Getenv("DATABASE_URL")
-	// connStr := "user=calc password=ZVo2buR4oRA5fEq0fb5o dbname=distribcalc sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
@@ -36,10 +35,6 @@ func StartDB() *sql.DB {
 }
 
 func MakeDB(db *sql.DB) {
-	// // Подключение к базе данных
-	// db := StartDB()
-	// defer db.Close()
-
 	// Создание таблицы expressions, если такой не существует
 	_, err := db.Exec("CREATE TABLE IF NOT EXISTS public.expressions (id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 ), expression text, answer real, state integer, PRIMARY KEY (id));")
 	if err != nil {
@@ -75,22 +70,13 @@ func MakeDB(db *sql.DB) {
 	}
 
 	// Создание таблицы с пользователями
-	// const usersTable = `
-	// CREATE TABLE IF NOT EXISTS users(
-	// 	id INTEGER PRIMARY KEY AUTOINCREMENT, 
-	// 	name TEXT UNIQUE,
-	// 	password TEXT
-	// );`
-
-	// if _, err := db.Exec(usersTable); err != nil {
-	// 	log.Fatal(err)
-	// }
+	if _, err := db.Exec("CREATE TABLE IF NOT EXISTS public.users (id integer NOT NULL GENERATED ALWAYS AS IDENTITY( INCREMENT 1 START 1 MINVALUE 1 ), name text unique, password text,  PRIMARY KEY (id));"); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // Получение списка выражений
 func GetExpressionData(db *sql.DB) []MainExpression {
-	// db := StartDB()
-	// defer db.Close()
 	rows, err := db.Query("select * from expressions")
 	if err != nil {
 		panic(err)
@@ -111,8 +97,6 @@ func GetExpressionData(db *sql.DB) []MainExpression {
 
 // Получение информации о вычислителях
 func GetSereverInfo(db *sql.DB) []Server {
-	// db := StartDB()
-	// defer db.Close()
 	rows, err := db.Query("select * from servers")
 	if err != nil {
 		panic(err)
@@ -134,17 +118,13 @@ func GetSereverInfo(db *sql.DB) []Server {
 // Добавление нового пользователя в таблицу
 func InsertUser(ctx context.Context, db *sql.DB, user *authorization.User) (int64, error) {
 	var q = `
-	INSERT INTO users (name, password) values ($1, $2)
+	INSERT INTO users (name, password) values ($1, $2) RETURNING id
 	`
-	result, err := db.ExecContext(ctx, q, user.Name, user.Password)
+	var id int64
+	err := db.QueryRow(q, user.Name, user.Password).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
 	return id, nil
 }
 

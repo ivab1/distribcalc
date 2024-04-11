@@ -21,16 +21,3 @@ services:
       - DATABASE_URL=postgres://calc:ZVo2buR4oRA5fEq0fb5o@db:5432/distribcalc?sslmode=disable
     ports:
       - "8080:8080"
-
-# version: '3.8'
-
-# services:
-#   db:
-#     container_name: db
-#     ports:
-#       - "5432:5432"
-#     environment:
-#       - POSTGRES_DB=distribcalc
-#       - POSTGRES_PASSWORD=ZVo2buR4oRA5fEq0fb5o
-#       - POSTGRES_USER=calc
-#     image: postgres:16.2-alpine

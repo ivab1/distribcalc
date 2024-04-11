@@ -28,6 +28,10 @@ body {
     background-color: #111;
 }
 
+.topnav li a#logout:hover {
+    background-color: #ff0000;
+}
+
 .topnav img {
     display: block;
     margin-top: 6px;
@@ -39,7 +43,7 @@ body {
     padding-left: 10px;
 }
 
-input[type=number], input[type=text] {
+input[type=number], input[type=text], input[type=password] {
     padding: 15px 25px;
     margin: 8px 0;
     border: 2px solid grey;
@@ -48,7 +52,7 @@ input[type=number], input[type=text] {
     font-size: medium;
 }
 
-input[type=submit] {
+input[type=submit], button[type=submit] {
     background-color: #527c4c;
     border: none;
     border-radius: 8px;
@@ -58,4 +62,17 @@ input[type=submit] {
     margin: 4px 2px;
     cursor: pointer;
     font-size: large;
+}
+
+.authorization {
+    text-align: center;
+    box-shadow: 0 0 7px #D2D2D2;
+    margin-right: 30%;
+    margin-left: 30%;
+    margin-top: 7%;
+    background: #ffffff;
+    padding-top: 1.5%;
+    padding-bottom: 1.5%;
+    border-radius: 20px;
+    font-family: sans-serif;
 }

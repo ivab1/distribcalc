@@ -39,7 +39,6 @@ type ExpressionForCount struct {
 }
 
 func Agent(db *sql.DB) {
-	// db := database.StartDB()
 	db.Exec("update servers set nextping = $1 where id = 1", time.Now().Add(10*time.Second).Format("2006-01-02 15:04:05"))
 	go SendPing(db)
 	for {
@@ -180,8 +179,6 @@ func GetExpression(db *sql.DB) (bool, []string, int, int, string, bool) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		// db := database.StartDB()
-		// defer db.Close()
 		row := db.QueryRow("select * from simpleexpressions where id = $1", receivedExpression.ID)
 		expression := ExpressionForCount{}
 		row.Scan(&expression.ID, &expression.MainID, &expression.Variable, &expression.N1, &expression.N2, &expression.Operation, &expression.Answer, &expression.Processing, &expression.Last)
