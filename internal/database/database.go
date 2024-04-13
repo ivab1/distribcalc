@@ -16,6 +16,7 @@ type MainExpression struct {
 	Expression string
 	Answer     any
 	State      int
+	UserID     int
 }
 
 type Server struct {
@@ -36,7 +37,7 @@ func StartDB() *sql.DB {
 
 func MakeDB(db *sql.DB) {
 	// Создание таблицы expressions, если такой не существует
-	_, err := db.Exec("CREATE TABLE IF NOT EXISTS public.expressions (id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 ), expression text, answer real, state integer, PRIMARY KEY (id));")
+	_, err := db.Exec("CREATE TABLE IF NOT EXISTS public.expressions (id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 ), expression text, answer real, state integer, userid integer, PRIMARY KEY (id));")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -76,8 +77,8 @@ func MakeDB(db *sql.DB) {
 }
 
 // Получение списка выражений
-func GetExpressionData(db *sql.DB) []MainExpression {
-	rows, err := db.Query("select * from expressions")
+func GetExpressionData(db *sql.DB, userID int64) []MainExpression {
+	rows, err := db.Query("select * from expressions where userid = $1", userID)
 	if err != nil {
 		panic(err)
 	}
@@ -85,7 +86,7 @@ func GetExpressionData(db *sql.DB) []MainExpression {
 	mainExpressions := []MainExpression{}
 	for rows.Next() {
 		mainExpression := MainExpression{}
-		err := rows.Scan(&mainExpression.Id, &mainExpression.Expression, &mainExpression.Answer, &mainExpression.State)
+		err := rows.Scan(&mainExpression.Id, &mainExpression.Expression, &mainExpression.Answer, &mainExpression.State, &mainExpression.UserID)
 		if err != nil {
 			log.Fatal(err)
 			continue

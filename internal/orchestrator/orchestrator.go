@@ -17,6 +17,7 @@ import (
 type ExpressionStruct struct {
 	Expression string `json:"expression"`
 	ID         int    `json:"id"`
+	UserID int `json:"userid"`
 }
 
 type SimpleExpressions struct {
@@ -80,18 +81,18 @@ func Orchestrator(db *sql.DB) http.HandlerFunc {
 			if err != nil {
 				log.Fatal(err)
 			}
-
-			newExpression := ExpressionStruct{Expression: string(data)}
+			newExpression := ExpressionStruct{}
+			err = json.Unmarshal(data, &newExpression)
+			log.Println(newExpression)
+			if err != nil {
+				log.Fatal(err)
+			}
 			statuscode := 200
 			if !strings.ContainsAny(newExpression.Expression, "+-*/") || strings.Contains(newExpression.Expression, "**") || strings.ContainsAny(newExpression.Expression, ".,!@#$%^&()<>|`~\"'") {
 				statuscode = 400
-				db := database.StartDB()
-				defer db.Close()
-				db.QueryRow("insert into expressions (expression, state) values ($1, $2) returning id", newExpression.Expression, statuscode).Scan(&newExpression.ID)
+				db.QueryRow("insert into expressions (expression, state, userid) values ($1, $2, $3) returning id", newExpression.Expression, statuscode, newExpression.UserID).Scan(&newExpression.ID)
 			} else {
-				db := database.StartDB()
-				defer db.Close()
-				db.QueryRow("insert into expressions (expression, state) values ($1, $2) returning id", newExpression.Expression, statuscode).Scan(&newExpression.ID)
+				db.QueryRow("insert into expressions (expression, state, userid) values ($1, $2, $3) returning id", newExpression.Expression, statuscode, newExpression.UserID).Scan(&newExpression.ID)
 
 				tokens, err := shuntingYard.Scan(newExpression.Expression)
 				if err != nil {

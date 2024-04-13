@@ -4,14 +4,17 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/ivab1/distribcalc/internal/authorization"
 	"github.com/ivab1/distribcalc/internal/database"
+	"github.com/ivab1/distribcalc/internal/orchestrator"
 )
 
 type TimeStruct struct {
@@ -22,8 +25,11 @@ type TimeStruct struct {
 	Lifetime int
 }
 
-func SendoToOrchestrator(exp string) {
-	data := []byte(exp)
+func SendoToOrchestrator(exp orchestrator.ExpressionStruct) {
+	data, err := json.Marshal(exp)
+	if err != nil {
+		log.Fatal(err)
+	}
 	req, err := http.NewRequest("POST", "http://localhost:8080/orchestrator", bytes.NewBuffer(data))
 	req.Header.Set("Data-Type", "expression")
 	if err != nil {
@@ -43,8 +49,15 @@ func HomePage(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	if r.Method == "POST" {
-		expression := r.FormValue("expression")
-		SendoToOrchestrator(expression)
+		cookieData, err := r.Cookie("user")
+		if err != nil {
+			http.Redirect(w, r, "/", http.StatusFound)
+		} else {
+			token := cookieData.Value
+			user := authorization.GetTokenValue(token)
+			expression := orchestrator.ExpressionStruct{Expression: r.FormValue("expression"), UserID: int(user.ID)}
+			SendoToOrchestrator(expression)
+		}
 	}
 	tmpl.ExecuteTemplate(w, "index", "")
 }
@@ -85,9 +98,16 @@ func ExpressionsPage(db *sql.DB) http.HandlerFunc {
 		if err != nil {
 			log.Fatal(err)
 		}
-		data := database.GetExpressionData(db)
-		slices.Reverse(data)
-		tmpl.ExecuteTemplate(w, "expressions", data)
+		cookieData, err := r.Cookie("user")
+		if err != nil {
+			http.Redirect(w, r, "/", http.StatusFound)
+		} else {
+			token := cookieData.Value
+			user := authorization.GetTokenValue(token)
+			data := database.GetExpressionData(db, user.ID)
+			slices.Reverse(data)
+			tmpl.ExecuteTemplate(w, "expressions", data)
+		}
 	})
 }
 
@@ -117,7 +137,7 @@ func RegistrationPage(db *sql.DB) http.HandlerFunc {
 			if password1 != password2 {
 				log.Println("Пароли не совпадают")
 				info = "Пароли не совпадают!"
-			} else { 
+			} else {
 				user, err := authorization.MakeUser(username, password1)
 				if err != nil {
 					info = "Ошибка регистрации!"
@@ -130,9 +150,10 @@ func RegistrationPage(db *sql.DB) http.HandlerFunc {
 						user.ID = id
 						token := authorization.MakeToken(user)
 						http.SetCookie(w, &http.Cookie{
-							Name: "user",
-							Value: token,
+							Name:     "user",
+							Value:    token,
 							HttpOnly: true,
+							Expires: time.Now().Add(5 * time.Minute),
 						})
 						http.Redirect(w, r, "/home", http.StatusFound)
 					}
@@ -163,9 +184,10 @@ func LoginPage(db *sql.DB) http.HandlerFunc {
 				} else {
 					token := authorization.MakeToken(user)
 					http.SetCookie(w, &http.Cookie{
-						Name: "user",
-						Value: token,
+						Name:     "user",
+						Value:    token,
 						HttpOnly: true,
+						Expires: time.Now().Add(5 * time.Minute),
 					})
 					http.Redirect(w, r, "/home", http.StatusFound)
 				}
@@ -190,10 +212,10 @@ func StartPage(w http.ResponseWriter, r *http.Request) {
 
 func Logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
-		Name: "user",
-		Value: "",
+		Name:     "user",
+		Value:    "",
 		HttpOnly: true,
-		MaxAge: -1,
+		MaxAge:   -1,
 	})
 	http.Redirect(w, r, "/", http.StatusFound)
 }
