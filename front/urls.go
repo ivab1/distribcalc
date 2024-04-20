@@ -25,6 +25,7 @@ type TimeStruct struct {
 	Lifetime int
 }
 
+// Отправить данные полученного выражения на оркестратор
 func SendoToOrchestrator(exp orchestrator.ExpressionStruct) {
 	data, err := json.Marshal(exp)
 	if err != nil {
@@ -49,6 +50,7 @@ func HomePage(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	if r.Method == "POST" {
+		// Проверка авторизованности пользователя
 		cookieData, err := r.Cookie("user")
 		if err != nil {
 			http.Redirect(w, r, "/", http.StatusFound)
@@ -99,6 +101,7 @@ func ExpressionsPage(db *sql.DB) http.HandlerFunc {
 			log.Fatal(err)
 		}
 		cookieData, err := r.Cookie("user")
+		// Проверка авторизованности пользователя
 		if err != nil {
 			http.Redirect(w, r, "/", http.StatusFound)
 		} else {
@@ -117,8 +120,10 @@ func StatePage(db *sql.DB) http.HandlerFunc {
 		if err != nil {
 			log.Fatal(err)
 		}
+		// Получение информации о серверах из базы данных
 		serverData := database.GetSereverInfo(db)
 		slices.Reverse(serverData)
+		// Передача данных о сервере в html шаблон
 		tmpl.ExecuteTemplate(w, "state", serverData)
 	})
 }
@@ -131,24 +136,28 @@ func RegistrationPage(db *sql.DB) http.HandlerFunc {
 			log.Fatal(err)
 		}
 		if r.Method == "POST" {
+			// Получение имени пользователя и пароля
 			username := r.FormValue("username")
 			password1 := r.FormValue("password1")
 			password2 := r.FormValue("password2")
+			// Сравнение двух паролей
 			if password1 != password2 {
-				log.Println("Пароли не совпадают")
 				info = "Пароли не совпадают!"
 			} else {
 				user, err := authorization.MakeUser(username, password1)
 				if err != nil {
 					info = "Ошибка регистрации!"
 				} else {
+					// Добавление пользователя в базу данных
 					id, err := database.InsertUser(context.Background(), db, &user)
 					if err != nil {
 						info = "Ошибка регистрации!"
 					} else {
 						log.Printf("New user: %s id: %d!", user.Name, id)
 						user.ID = id
+						// Создание токена с именем и id пользователя
 						token := authorization.MakeToken(user)
+						// Запись токена в куки файл
 						http.SetCookie(w, &http.Cookie{
 							Name:     "user",
 							Value:    token,
@@ -172,23 +181,30 @@ func LoginPage(db *sql.DB) http.HandlerFunc {
 			log.Fatal(err)
 		}
 		if r.Method == http.MethodPost {
+			// Получение имени пользователя и пароля
 			username := r.FormValue("username")
 			password := r.FormValue("password")
+			// Проверка наличия пользователя в базе данных
 			user, err := database.SelectUser(context.TODO(), db, username)
 			if err != nil {
 				info = "Ошибка входа!"
 			} else {
+				// Проверка пароля пользователя
 				err = authorization.User{Name: username, OriginPassword: password}.ComparePassword(user)
 				if err != nil {
 					info = "Ошибка входа!"
 				} else {
+					// Создание токена с именем и id пользователя
 					token := authorization.MakeToken(user)
+					// Запись токена в куки файл
 					http.SetCookie(w, &http.Cookie{
 						Name:     "user",
 						Value:    token,
 						HttpOnly: true,
 						Expires: time.Now().Add(5 * time.Minute),
 					})
+					// Перенаправление пользователя на домашнюю страницу
+					// после успешного входа в аккаунт
 					http.Redirect(w, r, "/home", http.StatusFound)
 				}
 			}
@@ -198,6 +214,7 @@ func LoginPage(db *sql.DB) http.HandlerFunc {
 }
 
 func StartPage(w http.ResponseWriter, r *http.Request) {
+	// Проверка пользователя на авторизованность
 	_, err := r.Cookie("user")
 	if err != nil {
 		tmpl, err := template.ParseFiles("./front/templates/start.html")
@@ -211,12 +228,14 @@ func StartPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
+	// Удаление данных о ппользователе из куки файла
 	http.SetCookie(w, &http.Cookie{
 		Name:     "user",
 		Value:    "",
 		HttpOnly: true,
 		MaxAge:   -1,
 	})
+	// Перенаправление пользователя на стартовую страницу
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
