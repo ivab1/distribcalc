@@ -39,7 +39,7 @@ type ExpressionForCount struct {
 }
 
 func Agent(db *sql.DB) {
-	db.Exec("update servers set nextping = $1 where id = 1", time.Now().Add(10*time.Second).Format("2006-01-02 15:04:05"))
+	db.Exec("update servers set nextping = $1 where serverid = 1", time.Now().Add(10*time.Second).Format("2006-01-02 15:04:05"))
 	go SendPing(db)
 	for {
 		time.Sleep(2 * time.Second)
@@ -56,7 +56,7 @@ func Agent(db *sql.DB) {
 		server := Server{}
 		row.Scan(&server.ID, &server.NextPing, &server.ServerState)
 		if t, _ := time.Parse("2006-01-02 15:04:05", server.NextPing); time.Until(t) <= time.Duration(limits.LifeTime/4)*time.Second {
-			db.Exec("update servers set nextping = $1 where id = 1", time.Now().Add(time.Duration(limits.LifeTime)*time.Second).Format("2006-01-02 15:04:05"))
+			db.Exec("update servers set nextping = $1 where serverid = 1", time.Now().Add(time.Duration(limits.LifeTime)*time.Second).Format("2006-01-02 15:04:05"))
 		}
 	}
 }
@@ -82,7 +82,7 @@ func SendPing(db *sql.DB) {
 			log.Fatal(err)
 		}
 		if time2.Before(time1) {
-			db.Exec("update servers set state = 3, nextping = $1 where id = $2", server.NextPing, id)
+			db.Exec("update servers set state = 3, nextping = $1 where serverid = $2", server.NextPing, id)
 		}
 		if err != nil {
 			log.Fatal(err)

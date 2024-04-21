@@ -1,6 +1,7 @@
 package authorization
 
 import (
+	"errors"
 	"log"
 	"time"
 
@@ -61,7 +62,7 @@ func MakeToken(user User) string {
 		"id": user.ID,
 		"name": user.Name,
 		"nbf": time.Now().Unix(),
-		"exp": time.Now().Add(5 * time.Minute).Unix(),
+		"exp": time.Now().Add(12 * time.Hour).Unix(),
 		"iat": time.Now().Unix(),
 	})
 	tokenString, err := token.SignedString([]byte(hmacSampleSecret))
@@ -71,17 +72,17 @@ func MakeToken(user User) string {
 	return tokenString
 }
 
-func GetTokenValue(token string) User {
+func GetTokenValue(token string) (User, error) {
 	tokenFromString, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			log.Fatal("Error with token")
+			return []byte(hmacSampleSecret), errors.New("error with token")
 		}
 
 		return []byte(hmacSampleSecret), nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		return User{}, err
 	}
 	claims, _ := tokenFromString.Claims.(jwt.MapClaims)
-	return User{ID: int64(claims["id"].(float64)), Name: claims["name"].(string)}
+	return User{ID: int64(claims["id"].(float64)), Name: claims["name"].(string)}, nil
 }

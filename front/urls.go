@@ -56,9 +56,13 @@ func HomePage(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/", http.StatusFound)
 		} else {
 			token := cookieData.Value
-			user := authorization.GetTokenValue(token)
-			expression := orchestrator.ExpressionStruct{Expression: r.FormValue("expression"), UserID: int(user.ID)}
-			SendoToOrchestrator(expression)
+			user, err := authorization.GetTokenValue(token)
+			if err != nil {
+				http.Redirect(w, r, "/logout", http.StatusFound)
+			} else {
+				expression := orchestrator.ExpressionStruct{Expression: r.FormValue("expression"), UserID: int(user.ID)}
+				SendoToOrchestrator(expression)
+			}
 		}
 	}
 	tmpl.ExecuteTemplate(w, "index", "")
@@ -106,10 +110,14 @@ func ExpressionsPage(db *sql.DB) http.HandlerFunc {
 			http.Redirect(w, r, "/", http.StatusFound)
 		} else {
 			token := cookieData.Value
-			user := authorization.GetTokenValue(token)
-			data := database.GetExpressionData(db, user.ID)
-			slices.Reverse(data)
-			tmpl.ExecuteTemplate(w, "expressions", data)
+			user, err := authorization.GetTokenValue(token)
+			if err != nil {
+				http.Redirect(w, r, "/logout", http.StatusFound)
+			} else {
+				data := database.GetExpressionData(db, user.ID)
+				slices.Reverse(data)
+				tmpl.ExecuteTemplate(w, "expressions", data)
+			}
 		}
 	})
 }
@@ -153,7 +161,7 @@ func RegistrationPage(db *sql.DB) http.HandlerFunc {
 					if err != nil {
 						info = "Ошибка регистрации!"
 					} else {
-						log.Printf("New user: %s id: %d!", user.Name, id)
+						log.Printf("New user: %s!", user.Name)
 						user.ID = id
 						// Создание токена с именем и id пользователя
 						token := authorization.MakeToken(user)
@@ -162,7 +170,7 @@ func RegistrationPage(db *sql.DB) http.HandlerFunc {
 							Name:     "user",
 							Value:    token,
 							HttpOnly: true,
-							Expires: time.Now().Add(5 * time.Minute),
+							Expires: time.Now().Add(12 * time.Hour),
 						})
 						http.Redirect(w, r, "/home", http.StatusFound)
 					}
@@ -201,7 +209,7 @@ func LoginPage(db *sql.DB) http.HandlerFunc {
 						Name:     "user",
 						Value:    token,
 						HttpOnly: true,
-						Expires: time.Now().Add(5 * time.Minute),
+						Expires: time.Now().Add(12 * time.Hour),
 					})
 					// Перенаправление пользователя на домашнюю страницу
 					// после успешного входа в аккаунт

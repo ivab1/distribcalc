@@ -7,17 +7,23 @@ services:
       - "5432:5432"
     environment:
       - POSTGRES_DB=distribcalc
-      - POSTGRES_PASSWORD=ZVo2buR4oRA5fEq0fb5o
+      - POSTGRES_PASSWORD=bx7gQHjTF9b
       - POSTGRES_USER=calc
     image: postgres:16.2-alpine
+    healthcheck:
+      test: pg_isready -U calc -d distribcalc
+      interval: 5s
+      timeout: 5s
+      retries: 5
   
   app:
     container_name: calculator
     build: 
       context: .
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      - DATABASE_URL=postgres://calc:ZVo2buR4oRA5fEq0fb5o@db:5432/distribcalc?sslmode=disable
+      - DATABASE_URL=postgres://calc:bx7gQHjTF9b@db:5432/distribcalc?sslmode=disable
     ports:
       - "8080:8080"
